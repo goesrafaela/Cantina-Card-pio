@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cantina - Cardápio Online</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+      /* CSS MODERNO E RESPONSIVO (Mantido) */
+      :root {
+        --primary-color: #4caf50;
+        --secondary-color: #f4f4f4;
+        --text-color: #333;
+        --price-color: #d32f2f;
+        --border-radius: 12px;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: var(--secondary-color);
+        color: var(--text-color);
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 20px auto;
+        background: white;
+        padding: 30px;
+        border-radius: var(--border-radius);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+
+      /* HEADER E PAGAMENTO INFORMATIVO */
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px; /* Ajustado para melhor visual com info de pagamento */
+      }
+
+      h1 {
+        font-size: 2.5em;
+        color: var(--primary-color);
+        border-bottom: none;
+        margin: 0;
+      }
+
+      h2 {
+        font-size: 1.5em;
+        color: var(--primary-color);
+        border-bottom: 3px solid var(--primary-color);
+        padding-bottom: 8px;
+        margin-top: 30px;
+        margin-bottom: 15px;
+        font-weight: 600;
+      }
+
+      /* ESTILO DOS ITENS DO CARDÁPIO (Mantido) */
+      .item {
+        padding: 15px 0;
+        border-bottom: 1px dashed #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: nowrap;
+      }
+
+      .item:last-child {
+        border-bottom: none;
+      }
+
+      .item-info {
+        flex-grow: 1;
+        padding-right: 15px;
+      }
+
+      .price {
+        font-weight: 700;
+        color: var(--price-color);
+        font-size: 1.1em;
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .item button {
+        padding: 8px 15px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1em;
+        flex-shrink: 0;
+      }
+
+      .item button:hover {
+        background-color: #388e3c;
+      }
+
+      /* ESTILOS DE AUTENTICAÇÃO E FORMULÁRIOS (Mantido) */
+      #auth-forms {
+        padding: 30px;
+        text-align: center;
+      }
+
+      .auth-form {
+        max-width: 400px;
+        margin: 20px auto;
+        padding: 30px;
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); /* Sombra mais suave */
+      }
+
+      /* TÍTULO INTERNO DO FORMULÁRIO */
+      .auth-form h3 {
+        color: var(--text-color);
+        font-size: 1.8em;
+        margin-bottom: 25px;
+        font-weight: 500;
+      }
+
+      /* CAMPOS DE ENTRADA (O MAIOR FOCO NA MODERNIZAÇÃO) */
+      .auth-form input {
+        width: 90%;
+        padding: 14px 12px; /* Aumenta o padding vertical */
+        margin: 8px 0 18px; /* Mais margem abaixo */
+        border: 1px solid #ddd; /* Borda mais discreta */
+        border-radius: 8px; /* Cantos mais arredondados */
+        font-size: 1em;
+        color: var(--text-color);
+        box-sizing: border-box;
+        transition: border-color 0.3s, box-shadow 0.3s;
+      }
+
+      .auth-form input:focus {
+        border-color: var(--primary-color); /* Borda verde ao focar */
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2); /* Efeito de foco suave */
+        outline: none;
+      }
+
+      /* BOTÃO DE SUBMIT */
+      .auth-form button[type="submit"] {
+        width: 90%;
+        padding: 14px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 8px; /* Cantos arredondados */
+        cursor: pointer;
+        font-size: 1.1em;
+        font-weight: 600;
+        margin-top: 10px;
+        transition: background-color 0.3s;
+      }
+
+      .auth-form button[type="submit"]:hover {
+        background-color: #388e3c;
+      }
+
+      /* LINKS SECUNDÁRIOS (Trocar de Login/Cadastro) */
+      .auth-form p a {
+        color: var(--primary-color);
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+
+      .auth-form p a:hover {
+        color: #388e3c;
+        text-decoration: underline;
+      }
+
+      /* BARRA LATERAL DO CARRINHO (Ajustada) */
+      #cart-sidebar {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 350px;
+        max-width: 90vw;
+        height: 100%;
+        background: white;
+        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
+        padding: 20px; /* Mantém o padding lateral e superior */
+        padding-bottom: 10px; /* Reduz o padding inferior aqui */
+        display: none;
+        z-index: 100;
+        /* Removed overflow-y: auto; here to manage scroll better */
+        border-top-left-radius: var(--border-radius);
+        border-bottom-left-radius: var(--border-radius);
+        display: flex;
+        flex-direction: column;
+      }
+
+      #cart-items-list {
+        flex-grow: 1;
+        margin-bottom: 15px;
+        /* ⚠️ ADICIONADO: padding inferior grande para evitar que os itens fiquem atrás dos botões */
+        padding-bottom: 80px;
+        overflow-y: auto; /* A barra de rolagem deve estar APENAS nesta lista */
+      }
+
+      /* Estilos de Checkout (Os botões ficam fixos na parte de baixo do sidebar) */
+      #checkout-actions {
+        display: flex;
+        gap: 10px;
+        padding-top: 15px;
+        /* ⚠️ ADICIONADO: Uma borda superior para separar a área do total dos botões */
+        border-top: 1px solid #ddd;
+      }
+      /* Estilos de Checkout (Ajuste Horizontal) */
+      #checkout-actions {
+        display: flex;
+        gap: 10px;
+        padding-top: 15px; /* Mais espaço para o total */
+        padding-bottom: 5px; /* Para não grudar no final da tela */
+      }
+
+      #checkout-actions button {
+        /* flex: 1 garante que ambos os botões ocupem o espaço restante igualmente */
+        flex: 1;
+        padding: 12px 5px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: center;
+        border: none;
+        transition: background-color 0.2s;
+      }
+
+      #close-cart-btn {
+        background-color: #6c757d; /* Cinza para fechar */
+        color: white;
+      }
+
+      #checkout-btn {
+        background: var(--primary-color) !important;
+        color: white;
+      }
+
+      /* BOTÃO FLUTUANTE */
+      #view-cart-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        padding: 0;
+        background-color: #1976d2;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        font-size: 1.5em;
+        line-height: 60px;
+        text-align: center;
+      }
+
+      /* MEDIA QUERIES (Mantido) */
+      @media (max-width: 600px) {
+        /* ... (Regras de responsividade) ... */
+        body {
+          padding: 0;
+        }
+        .container {
+          margin: 0;
+          padding: 20px 15px;
+          border-radius: 0;
+          box-shadow: none;
+          min-height: 100vh;
+        }
+        .item {
+          flex-direction: column;
+          align-items: flex-start;
+          padding: 15px 0;
+        }
+        .item-info {
+          width: 100%;
+          margin-bottom: 8px;
+        }
+        .item button {
+          width: 100%;
+          padding: 10px 0;
+          font-size: 1.1em;
+        }
+        #cart-sidebar {
+          width: 100%;
+          max-width: 100vw;
+          border-radius: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 5px;
+        "
+      >
+        <div style="font-size: 0.9em; line-height: 1.4">
+          <h1 style="font-size: 1.8em; margin: 0">Cantina - Cardápio</h1>
+          <p style="margin: 0; color: #555">
+            Aceitamos:
+            <strong style="color: var(--primary-color)"
+              >PIX, Cartão, Dinheiro e Marcar.</strong
+            >
+          </p>
+        </div>
+        <button
+          id="logout-btn"
+          style="
+            display: none;
+            padding: 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+          "
+        >
+          Sair
+        </button>
+      </header>
+
+      <p style="margin-top: 5px">Faça seu pedido para hoje.</p>
+
+      <div id="auth-forms" style="display: block">
+        <h2>Acesse sua conta ou cadastre-se</h2>
+
+        <form id="login-form" class="auth-form" style="display: block">
+          <h3>Login</h3>
+          <input type="email" id="login-email" placeholder="Email" required />
+          <input
+            type="password"
+            id="login-password"
+            placeholder="Senha"
+            required
+          />
+          <button type="submit">Entrar</button>
+          <p>
+            Novo por aqui?
+            <a href="#" onclick="showForm('signup')">Crie sua conta.</a>
+          </p>
+        </form>
+
+        <form id="signup-form" class="auth-form" style="display: none">
+          <h3>Cadastro</h3>
+          <input type="text" id="signup-name" placeholder="Seu Nome" required />
+          <input
+            type="tel"
+            id="signup-phone"
+            placeholder="Telefone (WhatsApp)"
+            required
+          />
+          <input type="email" id="signup-email" placeholder="Email" required />
+          <input
+            type="password"
+            id="signup-password"
+            placeholder="Crie uma Senha"
+            required
+          />
+          <button type="submit">Cadastrar</button>
+          <p>
+            Já tem conta?
+            <a href="#" onclick="showForm('login')">Fazer login.</a>
+          </p>
+        </form>
+      </div>
+
+      <div id="menu-app" style="display: none">
+        <section id="menu-dia">
+          <h2>🍽️ Prato de Hoje (<span id="dia-semana"></span>)</h2>
+          <div id="prato-principal">Carregando prato do dia...</div>
+        </section>
+
+        <section id="menu-lanches">
+          <h2>🥪 Lanches</h2>
+          <div id="lanches-lista">Carregando lanches...</div>
+        </section>
+
+        <section id="menu-bebidas">
+          <h2>🥤 Bebidas</h2>
+          <div id="bebidas-lista">Carregando bebidas...</div>
+        </section>
+      </div>
+    </div>
+
+    <div id="cart-sidebar">
+      <h3>🛒 Seu Carrinho</h3>
+
+      <div id="cart-items-list">
+        <p>Seu carrinho está vazio.</p>
+      </div>
+
+      <div
+        id="payment-selection"
+        style="
+          padding-top: 15px;
+          border-top: 1px solid #ddd;
+          margin-bottom: 15px;
+        "
+      >
+        <h4>Forma de Pagamento:</h4>
+        <select
+          id="payment-method"
+          style="
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+          "
+          required
+        >
+          <option value="">Selecione...</option>
+          <option value="PIX">PIX</option>
+          <option value="Dinheiro">Dinheiro</option>
+          <option value="Cartão">Cartão (Crédito/Débito)</option>
+          <option value="Marcar">Marcar (Registro Interno)</option>
+        </select>
+
+        <input
+          type="number"
+          id="troco-input"
+          placeholder="Precisa de troco para quanto? (Opcional)"
+          style="
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            display: none;
+          "
+        />
+      </div>
+
+      <div id="cart-summary">
+        <p>
+          <strong>Total: R$ <span id="cart-total">0,00</span></strong>
+        </p>
+      </div>
+
+      <div id="checkout-actions">
+        <button id="close-cart-btn">Fechar</button>
+        <button id="checkout-btn">Finalizar Pedido</button>
+      </div>
+    </div>
+
+    <button id="view-cart-btn">
+      🛒
+      <span id="cart-count">0</span>
+    </button>
+
+    <script src="app.js"></script>
+  </body>
+</html>
