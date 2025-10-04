@@ -6,19 +6,21 @@
     <title>Cantina - Cardápio Online</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-      /* CSS MODERNO E RESPONSIVO (COMPLETO) */
+      /* CSS MODERNO E RESPONSIVO (FINAL E ESTÁVEL) */
       :root {
-        --primary-color: #4caf50; /* Verde Cantina */
+        --primary-color: #4caf50;
         --secondary-color: #f4f4f4;
         --text-color: #333;
-        --price-color: #d32f2f; /* Vermelho mais forte para preço */
+        --price-color: #d32f2f;
         --border-radius: 12px;
       }
 
       body {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         margin: 0;
-        padding: 0;
+        /* ⚠️ ADICIONADO: Padding de segurança na parte inferior do body para que o conteúdo não cubra o botão flutuante */
+        padding-bottom: 80px;
+        padding-top: 0;
         background-color: var(--secondary-color);
         color: var(--text-color);
       }
@@ -57,7 +59,7 @@
         font-weight: 600;
       }
 
-      /* ESTILO DOS ITENS DO CARDÁPIO (Padrão Desktop/Tablet) */
+      /* ESTILO DOS ITENS DO CARDÁPIO (Mantido) */
       .item {
         padding: 15px 0;
         border-bottom: 1px dashed #e0e0e0;
@@ -99,24 +101,20 @@
         font-size: 1em;
       }
 
-      /* --- BARRA LATERAL DO CARRINHO (Ajustada) --- */
-      /* BARRA LATERAL DO CARRINHO (CORREÇÃO DE ALTURA E SCROLL) */
+      /* --- BARRA LATERAL DO CARRINHO (Final) --- */
       #cart-sidebar {
         position: fixed;
         top: 0;
         right: 0;
         width: 350px;
         max-width: 90vw;
-        height: 100vh; /* ⚠️ ATUALIZADO: Usar 100vh para ocupar a altura real da viewport */
+        height: 100vh; /* ⚠️ Altura total da tela */
         background: white;
         box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
         padding: 20px;
-
-        /* ⚠️ ATUALIZADO: Usamos padding interno no próprio sidebar */
-        padding-bottom: 30px;
-
+        padding-bottom: 10px;
         display: none;
-        z-index: 100;
+        z-index: 150; /* Prioridade máxima */
         border-top-left-radius: var(--border-radius);
         border-bottom-left-radius: var(--border-radius);
         display: flex;
@@ -126,28 +124,21 @@
       #cart-items-list {
         flex-grow: 1;
         margin-bottom: 15px;
-
-        /* ⚠️ ATUALIZADO: Aumentamos o padding inferior para garantir que o último item seja clicável */
         padding-bottom: 100px;
-        overflow-y: auto; /* Apenas a lista de itens tem scroll */
+        overflow-y: auto;
       }
 
-      /* Garante que o total e os botões não sumam */
-      #cart-summary {
-        margin-top: 10px;
-      }
-
+      /* Estilos de Checkout (Mantido) */
       #checkout-actions {
         display: flex;
         gap: 10px;
         padding-top: 15px;
-        /* ⚠️ ATUALIZADO: Garante que os botões fiquem logo acima da borda */
         margin-top: auto;
         border-top: 1px solid #ddd;
       }
 
       #checkout-actions button {
-        flex: 1; /* Ocupam o espaço igualmente */
+        flex: 1;
         padding: 12px 5px;
         border-radius: 8px;
         font-weight: 600;
@@ -156,65 +147,42 @@
         border: none;
       }
 
-      /* --- BOTÃO FLUTUANTE (Mantido) --- */
+      /* --- BOTÃO FLUTUANTE (CORRIGIDO PARA ESTABILIDADE) --- */
       #view-cart-btn {
         position: fixed;
         bottom: 20px;
         right: 20px;
         width: 60px;
         height: 60px;
+        padding: 0;
+        background-color: #1976d2;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        font-size: 1.5em;
         line-height: 60px;
-        /* ... (restante do estilo) ... */
-        z-index: 99; /* Fica abaixo apenas do sidebar */
+        text-align: center;
+        z-index: 100; /* Alto z-index para não ser coberto */
       }
 
-      /* ========================================================== */
-      /* MEDIA QUERIES (REGRAS PARA CELULAR - TELAS ABAIXO DE 600px) */
-      /* ========================================================== */
+      /* --- MEDIA QUERIES (REGRAS PARA CELULAR) --- */
       @media (max-width: 600px) {
         body {
-          padding: 0;
+          /* Apenas o padding-bottom é suficiente para garantir o espaço do botão */
+          padding-bottom: 80px;
+          padding-top: 0;
         }
 
         .container {
           margin: 0;
-          /* CORREÇÃO: Aumentar o padding lateral para evitar corte */
           padding: 25px 20px;
           border-radius: 0;
           box-shadow: none;
-          min-height: 100vh;
-        }
-
-        h1 {
-          font-size: 2em;
-        }
-
-        /* CORREÇÃO: Aumenta o padding interno do formulário */
-        .auth-form,
-        #auth-forms {
-          padding: 20px 15px; /* Aumentado de 5px para 15px/20px */
-        }
-
-        /* Ajuste para itens do cardápio em telas pequenas */
-        .item {
-          flex-direction: column;
-          align-items: flex-start;
-          padding: 15px 0;
-        }
-
-        .item-info {
-          width: 100%;
-          margin-bottom: 8px;
-        }
-
-        .item button {
-          width: 100%;
-          padding: 10px 0;
-          font-size: 1.1em;
-        }
-
-        .price {
-          font-size: 1.2em;
+          min-height: calc(
+            100vh - 80px
+          ); /* Altura da tela menos o padding do botão */
         }
 
         /* O carrinho lateral ocupa 100% da tela */
@@ -223,11 +191,28 @@
           max-width: 100vw;
           border-radius: 0;
         }
+
+        /* Demais regras de responsividade mantidas */
+        .item {
+          flex-direction: column;
+          align-items: flex-start;
+          padding: 15px 0;
+        }
+        .item-info {
+          width: 100%;
+          margin-bottom: 8px;
+        }
+        .item button {
+          width: 100%;
+          padding: 10px 0;
+          font-size: 1.1em;
+        }
+        .price {
+          font-size: 1.2em;
+        }
       }
 
-      /* ========================================================== */
       /* CORREÇÃO DE ESTILOS (Links, Cores, etc.) */
-      /* ========================================================== */
       .auth-form p a {
         color: var(--primary-color);
         font-weight: 600;
