@@ -100,17 +100,21 @@
       }
 
       /* --- BARRA LATERAL DO CARRINHO (Ajustada) --- */
+      /* BARRA LATERAL DO CARRINHO (CORREÇÃO DE ALTURA E SCROLL) */
       #cart-sidebar {
         position: fixed;
         top: 0;
         right: 0;
         width: 350px;
         max-width: 90vw;
-        height: 100%;
+        height: 100vh; /* ⚠️ ATUALIZADO: Usar 100vh para ocupar a altura real da viewport */
         background: white;
         box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
         padding: 20px;
-        padding-bottom: 10px;
+
+        /* ⚠️ ATUALIZADO: Usamos padding interno no próprio sidebar */
+        padding-bottom: 30px;
+
         display: none;
         z-index: 100;
         border-top-left-radius: var(--border-radius);
@@ -122,15 +126,23 @@
       #cart-items-list {
         flex-grow: 1;
         margin-bottom: 15px;
-        padding-bottom: 80px; /* Garante que o último item não seja cortado */
-        overflow-y: auto; /* Apenas o conteúdo rola */
+
+        /* ⚠️ ATUALIZADO: Aumentamos o padding inferior para garantir que o último item seja clicável */
+        padding-bottom: 100px;
+        overflow-y: auto; /* Apenas a lista de itens tem scroll */
       }
 
-      /* Estilos de Checkout (Horizontal robusto) */
+      /* Garante que o total e os botões não sumam */
+      #cart-summary {
+        margin-top: 10px;
+      }
+
       #checkout-actions {
         display: flex;
         gap: 10px;
         padding-top: 15px;
+        /* ⚠️ ATUALIZADO: Garante que os botões fiquem logo acima da borda */
+        margin-top: auto;
         border-top: 1px solid #ddd;
       }
 
