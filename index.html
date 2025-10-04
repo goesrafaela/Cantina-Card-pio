@@ -166,13 +166,24 @@
 
         .container {
           margin: 0;
-          padding: 20px 15px;
+          /* CORREÇÃO: Aumentar o padding lateral para evitar corte */
+          padding: 25px 20px;
           border-radius: 0;
           box-shadow: none;
           min-height: 100vh;
         }
 
-        /* Quebra o item do cardápio em duas linhas para melhor toque */
+        h1 {
+          font-size: 2em;
+        }
+
+        /* CORREÇÃO: Aumenta o padding interno do formulário */
+        .auth-form,
+        #auth-forms {
+          padding: 20px 15px; /* Aumentado de 5px para 15px/20px */
+        }
+
+        /* Ajuste para itens do cardápio em telas pequenas */
         .item {
           flex-direction: column;
           align-items: flex-start;
@@ -184,14 +195,14 @@
           margin-bottom: 8px;
         }
 
-        .item-info span.price {
-          font-size: 1.3em;
-        }
-
         .item button {
           width: 100%;
           padding: 10px 0;
           font-size: 1.1em;
+        }
+
+        .price {
+          font-size: 1.2em;
         }
 
         /* O carrinho lateral ocupa 100% da tela */
