@@ -1,5 +1,5 @@
 // ====================================================================
-// app.js - FINAL COM WHATSAPP, PAGAMENTO E MODAL
+// app.js - FINAL COM WHATSAPP, PAGAMENTO E MODAL (CORRIGIDO)
 // ====================================================================
 
 // 1. CONFIGURAÇÃO SUPABASE
@@ -65,8 +65,8 @@ function renderCart() {
                 <strong style="display: block;">${item.nome}</strong> 
                 <span style="font-size: 0.9em;">Qtd: ${item.quantidade}x (R$ ${formatPrice(itemTotal)})</span>
                 <div style="float: right;">
-                    <button style="margin-right: 5px;" onclick="updateCartQuantity(${index}, 1)">+</button>
-                    <button onclick="updateCartQuantity(${index}, -1)">-</button>
+                    <button style="margin-right: 5px;" onclick="updateCartQuantity(${index}, -1)">-</button>
+                    <button onclick="updateCartQuantity(${index}, 1)">+</button>
                 </div>
             </div>
         `;
@@ -134,7 +134,7 @@ async function fetchSubstituicoes() {
                             ${item.nome_substituicao} 
                             <span class="price" style="color: #666; font-size: 0.9em;">R$ 0,00</span>
                         </div>
-                        <button onclick="addToCart('${item.nome_substituicao} (SUB)', 0.00, true, '${itemId}')">+</button>
+                        <button onclick="addToCart('${item.nome_substituicao} (SUB)', 0.00, true, '${itemId}')">Adicionar ao carrinho</button>
                      </li>`;
         });
         html += '</ul>';
@@ -177,7 +177,7 @@ async function fetchPratoDoDia() {
                     <span class="price">R$ ${formatPrice(data.preco_prato)}</span>
                     Opção: O Prato
                 </div>
-                <button onclick="addToCart('Prato do Dia: ${data.prato_principal} (Prato)', ${data.preco_prato}, false, '${pratoID}')">+</button>
+                <button onclick="addToCart('Prato do Dia: ${data.prato_principal} (Prato)', ${data.preco_prato}, false, '${pratoID}')">Adicionar ao carrinho</button>
             </div>
             
             <div class="item">
@@ -185,7 +185,7 @@ async function fetchPratoDoDia() {
                     <span class="price">R$ ${formatPrice(data.preco_combo)}</span>
                     Opção: Combo (Prato + Refri)
                 </div>
-                <button onclick="addToCart('Prato do Dia: ${data.prato_principal} (Combo)', ${data.preco_combo}, false, '${comboID}')">+</button>
+                <button onclick="addToCart('Prato do Dia: ${data.prato_principal} (Combo)', ${data.preco_combo}, false, '${comboID}')">Adicionar ao carrinho</button>
             </div>
             
             <div id="substituicoes-list" style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px;">
@@ -218,7 +218,7 @@ async function fetchItensFixos(categoria, elementoId) {
                     ${item.nome}
                     ${item.descricao ? `<small> - ${item.descricao}</small>` : ''}
                 </div>
-                <button onclick="addToCart('${item.nome}', ${item.preco}, false, '${item.id}')">+</button>
+                <button onclick="addToCart('${item.nome}', ${item.preco}, false, '${item.id}')">Adicionar ao carrinho</button>
             </div>
         `).join('');
     } else {
@@ -313,7 +313,7 @@ async function checkUserSession() {
 
 
 // ====================================================================
-// 6. FUNÇÃO FINALIZAR PEDIDO (CHECKOUT) - COM NÚMERO SEQUENCIAL
+// 6. FUNÇÃO FINALIZAR PEDIDO (CHECKOUT) - (Mantida)
 // ====================================================================
 
 async function handleCheckout() {
@@ -322,7 +322,6 @@ async function handleCheckout() {
         return;
     }
 
-    // --- 1. CAPTURAR MÉTODO DE PAGAMENTO E TROCO ---
     const metodoPagamento = document.getElementById('payment-method').value;
     if (!metodoPagamento) {
         alert("Por favor, selecione a forma de pagamento.");
@@ -343,8 +342,6 @@ async function handleCheckout() {
     const valorTotal = shoppingCart.reduce((sum, item) => sum + (item.preco * item.quantidade), 0);
     const metodoDB = metodoPagamento + observacaoTroco;
 
-
-    // --- 2. BUSCAR DADOS DO CLIENTE ---
     const { data: clienteData, error: clienteError } = await supabase
         .from('clientes')
         .select('nome, telefone')
@@ -358,8 +355,6 @@ async function handleCheckout() {
     const clienteNome = clienteData.nome;
     const clienteTelefone = clienteData.telefone;
 
-
-    // --- 3. INSERIR NA TABELA 'PEDIDOS' (Registro no DB) ---
     const { data: pedidoData, error: pedidoError } = await supabase
         .from('pedidos')
         .insert({
@@ -380,8 +375,6 @@ async function handleCheckout() {
     const pedidoId = pedidoData.id;
     const numeroSequencial = pedidoData.numero_sequencial.toString().padStart(2, '0');
 
-
-    // --- 4. PREPARAR E INSERIR EM 'ITENS_PEDIDO' ---
     const itensPedidoParaInserir = shoppingCart.map(item => ({
         pedido_id: pedidoId,
         nome_item: item.nome,
@@ -401,7 +394,6 @@ async function handleCheckout() {
         return;
     }
 
-    // --- 5. MONTAGEM E ENVIO DA MENSAGEM PARA WHATSAPP ---
     const NUMERO_CANTINA = '5511914644275';
 
     let mensagem = `*🚨 NOVO PEDIDO (CANTINA)*\n\n`;
@@ -419,7 +411,6 @@ async function handleCheckout() {
 
     const urlWhatsapp = `https://wa.me/${NUMERO_CANTINA}?text=${encodeURIComponent(mensagem)}`;
 
-    // 6. SUCESSO E LIMPEZA
     shoppingCart = [];
     renderCart();
     hideCartModal();
