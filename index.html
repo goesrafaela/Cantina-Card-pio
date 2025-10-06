@@ -6,23 +6,22 @@
     <title>Cantina - Cardápio Online</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-      /* CSS MODERNO E RESPONSIVO (FINAL E ESTÁVEL) */
+      /* CSS MODERNO E RESPONSIVO FINAL */
       :root {
-        --primary-color: #4caf50;
+        --primary-color: #4caf50; /* Verde Cantina */
         --secondary-color: #f4f4f4;
         --text-color: #333;
-        --price-color: #d32f2f;
+        --price-color: #d32f2f; /* Vermelho mais forte para preço */
         --border-radius: 12px;
       }
 
       body {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         margin: 0;
-        /* ⚠️ ADICIONADO: Padding de segurança na parte inferior do body para que o conteúdo não cubra o botão flutuante */
-        padding-bottom: 80px;
-        padding-top: 0;
+        padding: 0;
         background-color: var(--secondary-color);
         color: var(--text-color);
+        padding-bottom: 80px; /* Espaço para o botão flutuante */
       }
 
       .container {
@@ -34,21 +33,18 @@
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
       }
 
-      /* --- REGRAS GERAIS E LAYOUTS --- */
+      /* HEADER E LAYOUT GERAL */
       header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 5px;
       }
-
       h1 {
-        font-size: 2.5em;
+        font-size: 1.8em;
         color: var(--primary-color);
-        border-bottom: none;
         margin: 0;
       }
-
       h2 {
         font-size: 1.5em;
         color: var(--primary-color);
@@ -59,7 +55,7 @@
         font-weight: 600;
       }
 
-      /* ESTILO DOS ITENS DO CARDÁPIO (Mantido) */
+      /* ESTILO DOS ITENS DO CARDÁPIO */
       .item {
         padding: 15px 0;
         border-bottom: 1px dashed #e0e0e0;
@@ -67,18 +63,17 @@
         justify-content: space-between;
         align-items: center;
       }
-
       .item-info {
         flex-grow: 1;
         padding-right: 15px;
       }
-
       .price {
         font-weight: 700;
         color: var(--price-color);
         font-size: 1.1em;
+        display: block;
+        margin-bottom: 4px;
       }
-
       .item button {
         padding: 8px 15px;
         background-color: var(--primary-color);
@@ -88,10 +83,17 @@
         cursor: pointer;
         font-size: 1em;
         flex-shrink: 0;
-        transition: background-color 0.3s;
       }
 
-      /* --- ESTILOS DE AUTENTICAÇÃO (Mantido) --- */
+      /* ESTILOS DE AUTENTICAÇÃO MODERNIZADOS */
+      .auth-form {
+        max-width: 400px;
+        margin: 20px auto;
+        padding: 30px;
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      }
       .auth-form input {
         width: 90%;
         box-sizing: border-box;
@@ -100,23 +102,50 @@
         border-radius: 8px;
         font-size: 1em;
       }
+      .auth-form input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        outline: none;
+      }
+      .auth-form button[type="submit"] {
+        width: 90%;
+        padding: 14px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.1em;
+        font-weight: 600;
+        margin-top: 10px;
+      }
 
-      /* --- BARRA LATERAL DO CARRINHO (Final) --- */
-      #cart-sidebar {
+      /* --- MODAL DO CARRINHO (CENTRALIZADO) --- */
+      #cart-modal-backdrop {
         position: fixed;
         top: 0;
+        left: 0;
         right: 0;
-        width: 350px;
-        max-width: 90vw;
-        height: 100vh; /* ⚠️ Altura total da tela */
-        background: white;
-        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
-        padding: 20px;
-        padding-bottom: 10px;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 150;
         display: none;
-        z-index: 150; /* Prioridade máxima */
-        border-top-left-radius: var(--border-radius);
-        border-bottom-left-radius: var(--border-radius);
+      }
+      #cart-sidebar {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 450px;
+        max-height: 90vh;
+        background: white;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        padding: 20px;
+        border-radius: var(--border-radius);
+        display: none;
+        z-index: 151;
+        overflow: hidden;
         display: flex;
         flex-direction: column;
       }
@@ -124,107 +153,81 @@
       #cart-items-list {
         flex-grow: 1;
         margin-bottom: 15px;
-        padding-bottom: 100px;
+        padding-right: 10px;
+        padding-bottom: 15px;
         overflow-y: auto;
+        max-height: 50vh;
       }
-
-      /* Estilos de Checkout (Mantido) */
       #checkout-actions {
         display: flex;
         gap: 10px;
         padding-top: 15px;
-        margin-top: auto;
         border-top: 1px solid #ddd;
+        margin-top: 10px;
       }
-
       #checkout-actions button {
         flex: 1;
         padding: 12px 5px;
         border-radius: 8px;
         font-weight: 600;
-        cursor: pointer;
-        text-align: center;
-        border: none;
       }
 
-      /* --- BOTÃO FLUTUANTE (CORRIGIDO PARA ESTABILIDADE) --- */
+      /* --- BOTÃO FLUTUANTE E CONTADOR --- */
       #view-cart-btn {
         position: fixed;
         bottom: 20px;
         right: 20px;
         width: 60px;
         height: 60px;
-        padding: 0;
+        line-height: 60px;
         background-color: #1976d2;
         color: white;
-        border: none;
         border-radius: 50%;
-        cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         font-size: 1.5em;
-        line-height: 60px;
         text-align: center;
-        z-index: 100; /* Alto z-index para não ser coberto */
+        z-index: 100;
+      }
+      #cart-count {
+        font-size: 0.5em;
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: var(--price-color);
+        color: white;
+        border-radius: 50%;
+        padding: 2px 6px;
+        line-height: 1;
+        font-weight: bold;
+        min-width: 1em;
+        text-align: center;
       }
 
-      /* --- MEDIA QUERIES (REGRAS PARA CELULAR) --- */
+      /* MEDIA QUERIES (Responsividade) */
       @media (max-width: 600px) {
         body {
-          /* Apenas o padding-bottom é suficiente para garantir o espaço do botão */
           padding-bottom: 80px;
           padding-top: 0;
         }
-
         .container {
           margin: 0;
           padding: 25px 20px;
           border-radius: 0;
           box-shadow: none;
-          min-height: calc(
-            100vh - 80px
-          ); /* Altura da tela menos o padding do botão */
+          min-height: 100vh;
         }
-
-        /* O carrinho lateral ocupa 100% da tela */
-        #cart-sidebar {
-          width: 100%;
-          max-width: 100vw;
-          border-radius: 0;
-        }
-
-        /* Demais regras de responsividade mantidas */
         .item {
           flex-direction: column;
           align-items: flex-start;
           padding: 15px 0;
-        }
-        .item-info {
-          width: 100%;
-          margin-bottom: 8px;
         }
         .item button {
           width: 100%;
           padding: 10px 0;
           font-size: 1.1em;
         }
-        .price {
-          font-size: 1.2em;
+        #cart-sidebar {
+          width: 95%;
         }
-      }
-
-      /* CORREÇÃO DE ESTILOS (Links, Cores, etc.) */
-      .auth-form p a {
-        color: var(--primary-color);
-        font-weight: 600;
-        text-decoration: none;
-      }
-      #logout-btn {
-        background-color: var(--price-color) !important;
-        border-radius: 8px !important;
-        font-weight: 600;
-        padding: 10px 15px !important;
-        color: white;
-        border: none;
       }
     </style>
   </head>
@@ -239,7 +242,7 @@
         "
       >
         <div style="font-size: 0.9em; line-height: 1.4">
-          <h1 style="font-size: 1.8em; margin: 0">Cantina - Cardápio</h1>
+          <h1 style="font-size: 1.8em; margin: 0">Cantina</h1>
           <p style="margin: 0; color: #555">
             Aceitamos:
             <strong style="color: var(--primary-color)"
@@ -325,7 +328,9 @@
       </div>
     </div>
 
-    <div id="cart-sidebar">
+    <div id="cart-modal-backdrop" style="display: none"></div>
+
+    <div id="cart-sidebar" style="display: none">
       <h3>🛒 Seu Carrinho</h3>
 
       <div id="cart-items-list">
@@ -380,8 +385,19 @@
       </div>
 
       <div id="checkout-actions">
-        <button id="close-cart-btn">Fechar</button>
-        <button id="checkout-btn">Finalizar Pedido</button>
+        <button
+          id="close-cart-btn"
+          onclick="hideCartModal()"
+          style="background-color: #6c757d; color: white"
+        >
+          Fechar
+        </button>
+        <button
+          id="checkout-btn"
+          style="background: var(--primary-color); color: white"
+        >
+          Finalizar Pedido
+        </button>
       </div>
     </div>
 

@@ -1,5 +1,5 @@
 // ====================================================================
-// app.js - FINAL COM WHATSAPP, PAGAMENTO E NÚMERO SEQUENCIAL
+// app.js - FINAL COM WHATSAPP, PAGAMENTO E MODAL
 // ====================================================================
 
 // 1. CONFIGURAÇÃO SUPABASE
@@ -11,7 +11,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let shoppingCart = [];
 
 // ====================================================================
-// 2. FUNÇÕES DE SUPORTE
+// 2. FUNÇÕES DE SUPORTE E MODAL
 // ====================================================================
 
 function getDiaDaSemana() {
@@ -24,8 +24,21 @@ function formatPrice(price) {
     return price.toFixed(2).replace('.', ',');
 }
 
+// Funções para mostrar e esconder o modal globalmente
+const showCartModal = () => {
+    document.getElementById('cart-modal-backdrop').style.display = 'block';
+    document.getElementById('cart-sidebar').style.display = 'flex';
+};
+
+const hideCartModal = () => {
+    document.getElementById('cart-modal-backdrop').style.display = 'none';
+    document.getElementById('cart-sidebar').style.display = 'none';
+};
+
+window.hideCartModal = hideCartModal;
+
 // ====================================================================
-// 3. LÓGICA DO CARRINHO (Mantida)
+// 3. LÓGICA DO CARRINHO (RENDERIZAÇÃO E MANIPULAÇÃO)
 // ====================================================================
 
 function renderCart() {
@@ -38,29 +51,26 @@ function renderCart() {
     if (shoppingCart.length === 0) {
         list.innerHTML = '<p>Seu carrinho está vazio.</p>';
         totalElement.textContent = '0,00';
-
-        // ⚠️ CORREÇÃO: O BOTÃO FLUTUANTE FICA SEMPRE VISÍVEL
         document.getElementById('view-cart-btn').style.display = 'block';
         countElement.textContent = '0';
-
         return;
     }
 
-    // Se houver itens, ele já está visível
     document.getElementById('view-cart-btn').style.display = 'block';
 
     list.innerHTML = shoppingCart.map((item, index) => {
         const itemTotal = item.preco * item.quantidade;
         total += itemTotal;
         return `
-            <div style="border-bottom: 1px solid #fff; padding: 5px 0;">
-                <strong>${item.nome}</strong> (${item.quantidade}x)
-                <span style="float: right;">R$ ${formatPrice(itemTotal)}</span>
-                <br>
-                <button style="margin-right: 5px;" onclick="updateCartQuantity(${index}, 1)">+</button>
-                <button onclick="updateCartQuantity(${index}, -1)">-</button>
-            </div>
-        `;
+            <div style="border-bottom: 1px solid #eee; padding: 5px 0;">
+                <strong style="display: block;">${item.nome}</strong> 
+                <span style="font-size: 0.9em;">Qtd: ${item.quantidade}x (R$ ${formatPrice(itemTotal)})</span>
+                <div style="float: right;">
+                    <button style="margin-right: 5px;" onclick="updateCartQuantity(${index}, 1)">+</button>
+                    <button onclick="updateCartQuantity(${index}, -1)">-</button>
+                </div>
+            </div>
+        `;
     }).join('');
 
     totalElement.textContent = formatPrice(total);
@@ -71,7 +81,7 @@ function renderCart() {
 function addToCart(nome, preco, is_substituicao, itemId) {
     const existingItemIndex = shoppingCart.findIndex(item => item.itemId === itemId);
 
-    if (existingItemIndex > -1) {
+    if (existingItemIndex > -1 && !is_substituicao) {
         shoppingCart[existingItemIndex].quantidade += 1;
     } else {
         shoppingCart.push({
@@ -97,9 +107,42 @@ function updateCartQuantity(index, delta) {
     renderCart();
 }
 
+window.addToCart = addToCart;
+window.updateCartQuantity = updateCartQuantity;
+
+
 // ====================================================================
-// 4. FUNÇÕES DE CONSULTA (QUERIES) - CARREGAMENTO DO CARDÁPIO (Mantida)
+// 4. FUNÇÕES DE CONSULTA (QUERIES) - CARREGAMENTO DO CARDÁPIO
 // ====================================================================
+
+async function fetchSubstituicoes() {
+    const { data, error } = await supabase
+        .from('substituicoes')
+        .select('id, nome_substituicao');
+
+    if (error) {
+        console.error("Erro ao carregar substituições:", error);
+        return;
+    }
+
+    const container = document.getElementById('substituicoes-list');
+    if (container && data && data.length > 0) {
+        let html = '<p style="font-weight: bold; margin-bottom: 5px;">Opções de Substituição:</p><ul style="list-style: none; padding: 0; margin: 0;">';
+
+        data.forEach(item => {
+            const itemId = `sub_${item.id}`;
+            html += `<li class="item" style="padding: 5px 0;">
+                        <div class="item-info" style="font-weight: normal;">
+                            ${item.nome_substituicao} 
+                            <span class="price" style="color: #666; font-size: 0.9em;">R$ 0,00</span>
+                        </div>
+                        <button onclick="addToCart('${item.nome_substituicao} (SUB)', 0.00, true, '${itemId}')">+</button>
+                     </li>`;
+        });
+        html += '</ul>';
+        container.innerHTML = html;
+    }
+}
 
 async function fetchPratoDoDia() {
     const diaAtual = getDiaDaSemana();
@@ -118,7 +161,7 @@ async function fetchPratoDoDia() {
         .single();
 
     const container = document.getElementById('prato-principal');
-    if (error) {
+    if (error && error.code !== 'PGRST116') {
         container.textContent = 'Erro ao carregar o prato do dia. Verifique o RLS para cardapio_semanal.';
         return;
     }
@@ -128,26 +171,30 @@ async function fetchPratoDoDia() {
         const comboID = `combo_${data.dia_da_semana}`;
 
         container.innerHTML = `
-            <h3>${data.prato_principal}</h3>
-            <p>${data.acompanhamentos}</p>
-            
-            <div class="item">
-                <div class="item-info">
-                    <span class="price">R$ ${formatPrice(data.preco_prato)}</span>
-                    Opção: O Prato
-                </div>
-                <button onclick="addToCart('Prato do Dia: ${data.prato_principal} (Prato)', ${data.preco_prato}, false, '${pratoID}')">+</button>
-            </div>
-            
-            <div class="item">
-                <div class="item-info">
-                    <span class="price">R$ ${formatPrice(data.preco_combo)}</span>
-                    Opção: Combo (Prato + Coca 300ml)
-                </div>
-                <button onclick="addToCart('Prato do Dia: ${data.prato_principal} (Combo)', ${data.preco_combo}, false, '${comboID}')">+</button>
-            </div>
-            <p style="margin-top: 15px; font-size: 0.9em;">*Opções de substituição disponíveis.</p>
-        `;
+            <h3>${data.prato_principal}</h3>
+            <p>${data.acompanhamentos}</p>
+            
+            <div class="item">
+                <div class="item-info">
+                    <span class="price">R$ ${formatPrice(data.preco_prato)}</span>
+                    Opção: O Prato
+                </div>
+                <button onclick="addToCart('Prato do Dia: ${data.prato_principal} (Prato)', ${data.preco_prato}, false, '${pratoID}')">+</button>
+            </div>
+            
+            <div class="item">
+                <div class="item-info">
+                    <span class="price">R$ ${formatPrice(data.preco_combo)}</span>
+                    Opção: Combo (Prato + Refri)
+                </div>
+                <button onclick="addToCart('Prato do Dia: ${data.prato_principal} (Combo)', ${data.preco_combo}, false, '${comboID}')">+</button>
+            </div>
+            
+            <div id="substituicoes-list" style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px;">
+                </div>
+        `;
+
+        await fetchSubstituicoes();
     }
 }
 
@@ -161,25 +208,21 @@ async function fetchItensFixos(categoria, elementoId) {
 
     if (error) {
         let errorMessage = `Erro ao carregar ${categoria}. Verifique o RLS ou os valores da coluna 'categoria' na tabela produtos_fixos.`;
-        if (error.code === '400') {
-            errorMessage = `Erro de filtro (400 Bad Request) para "${categoria}". Verifique se o valor no banco de dados está EXATAMENTE igual (sem espaços ou erros de digitação).`;
-        }
         container.textContent = errorMessage;
-        console.error(`Erro na query para ${categoria}:`, error);
         return;
     }
 
     if (data && data.length > 0) {
         container.innerHTML = data.map(item => `
-            <div class="item">
-                <div class="item-info">
-                    <span class="price">R$ ${formatPrice(item.preco)}</span>
-                    ${item.nome}
-                    ${item.descricao ? `<small> - ${item.descricao}</small>` : ''}
-                </div>
-                <button onclick="addToCart('${item.nome}', ${item.preco}, false, '${item.id}')">+</button>
-            </div>
-        `).join('');
+            <div class="item">
+                <div class="item-info">
+                    <span class="price">R$ ${formatPrice(item.preco)}</span>
+                    ${item.nome}
+                    ${item.descricao ? `<small> - ${item.descricao}</small>` : ''}
+                </div>
+                <button onclick="addToCart('${item.nome}', ${item.preco}, false, '${item.id}')">+</button>
+            </div>
+        `).join('');
     } else {
         container.textContent = `Nenhum item encontrado na categoria ${categoria}.`;
     }
@@ -248,10 +291,14 @@ async function handleSignUp(event) {
 async function handleLogout() {
     await supabase.auth.signOut();
     checkUserSession();
+    shoppingCart = [];
+    renderCart();
 }
 
 async function checkUserSession() {
     const { data: { user } } = await supabase.auth.getUser();
+
+    hideCartModal();
 
     if (user) {
         document.getElementById('auth-forms').style.display = 'none';
@@ -262,7 +309,7 @@ async function checkUserSession() {
         document.getElementById('auth-forms').style.display = 'block';
         document.getElementById('menu-app').style.display = 'none';
         document.getElementById('logout-btn').style.display = 'none';
-        document.getElementById('cart-sidebar').style.display = 'none';
+        document.getElementById('view-cart-btn').style.display = 'none';
     }
 }
 
@@ -285,20 +332,15 @@ async function handleCheckout() {
     }
 
     let observacaoTroco = '';
-    let trocoNecessario = 0;
     if (metodoPagamento === 'Dinheiro') {
         const trocoValor = document.getElementById('troco-input').value;
         if (trocoValor) {
-            trocoNecessario = parseFloat(trocoValor);
-            observacaoTroco = ` (Troco para R$ ${formatPrice(trocoNecessario)})`;
+            observacaoTroco = ` (Troco para R$ ${formatPrice(parseFloat(trocoValor))})`;
         }
     }
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        alert("Você precisa estar logado para finalizar o pedido.");
-        return;
-    }
+    if (!user) { return; }
 
     const valorTotal = shoppingCart.reduce((sum, item) => sum + (item.preco * item.quantidade), 0);
     const metodoDB = metodoPagamento + observacaoTroco;
@@ -320,7 +362,6 @@ async function handleCheckout() {
 
 
     // --- 3. INSERIR NA TABELA 'PEDIDOS' (Registro no DB) ---
-    // ⚠️ ALTERADO: Agora solicitamos o 'numero_sequencial' de volta.
     const { data: pedidoData, error: pedidoError } = await supabase
         .from('pedidos')
         .insert({
@@ -329,17 +370,16 @@ async function handleCheckout() {
             status: 'Pendente',
             metodo_pagamento: metodoDB
         })
-        .select('id, numero_sequencial') // PEDIMOS O NOVO CAMPO
+        .select('id, numero_sequencial')
         .single();
 
     if (pedidoError) {
         console.error('Erro ao criar o pedido:', pedidoError);
-        alert('Falha ao registrar o pedido. Verifique o RLS para a tabela "pedidos" e a configuração do SEQUENCE no Supabase!');
+        alert('Falha ao registrar o pedido. Verifique o RLS para a tabela "pedidos"!');
         return;
     }
 
     const pedidoId = pedidoData.id;
-    // FORMATAÇÃO DO NÚMERO SEQUENCIAL (ex: 1 -> "01", 10 -> "10")
     const numeroSequencial = pedidoData.numero_sequencial.toString().padStart(2, '0');
 
 
@@ -367,7 +407,6 @@ async function handleCheckout() {
     const NUMERO_CANTINA = '5511914644275';
 
     let mensagem = `*🚨 NOVO PEDIDO (CANTINA)*\n\n`;
-    // ⚠️ ALTERADO: Agora mostra o número sequencial!
     mensagem += `*Pedido: ${numeroSequencial}*\n`;
     mensagem += `Cliente: ${clienteNome}\n`;
     mensagem += `Telefone: ${clienteTelefone}\n\n`;
@@ -385,16 +424,15 @@ async function handleCheckout() {
     // 6. SUCESSO E LIMPEZA
     shoppingCart = [];
     renderCart();
-    document.getElementById('cart-sidebar').style.display = 'none';
+    hideCartModal();
 
-    // ⚠️ ALTERADO: Agora o alerta mostra o número sequencial
     alert(`Pedido Nº ${numeroSequencial} registrado! Finalize o envio da mensagem no WhatsApp.`);
     window.open(urlWhatsapp, '_blank');
 }
 
 
 // ====================================================================
-// 7. INICIALIZAÇÃO
+// 7. INICIALIZAÇÃO E LISTENERS
 // ====================================================================
 
 async function initMenuLoad() {
@@ -413,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
         paymentMethodSelect.addEventListener('change', (event) => {
             const isDinheiro = event.target.value === 'Dinheiro';
             trocoInput.style.display = isDinheiro ? 'block' : 'none';
-            trocoInput.value = ''; // Limpa ao trocar o método
+            trocoInput.value = '';
         });
     }
 
@@ -422,13 +460,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('signup-form').addEventListener('submit', handleSignUp);
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
 
-    // Listeners do Carrinho e Checkout
-    document.getElementById('view-cart-btn').addEventListener('click', () => {
-        document.getElementById('cart-sidebar').style.display = 'block';
-    });
-    document.getElementById('close-cart-btn').addEventListener('click', () => {
-        document.getElementById('cart-sidebar').style.display = 'none';
-    });
+    // Listeners do Carrinho (MODAL)
+    document.getElementById('view-cart-btn').addEventListener('click', showCartModal);
+    document.getElementById('cart-modal-backdrop').addEventListener('click', hideCartModal);
+
+    // Listener do Checkout
     document.getElementById('checkout-btn').addEventListener('click', handleCheckout);
 
     checkUserSession();
