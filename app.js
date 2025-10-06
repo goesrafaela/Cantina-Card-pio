@@ -24,7 +24,6 @@ function formatPrice(price) {
     return price.toFixed(2).replace('.', ',');
 }
 
-// Funções para mostrar e esconder o modal globalmente
 const showCartModal = () => {
     document.getElementById('cart-modal-backdrop').style.display = 'block';
     document.getElementById('cart-sidebar').style.display = 'flex';
@@ -109,7 +108,6 @@ function updateCartQuantity(index, delta) {
 
 window.addToCart = addToCart;
 window.updateCartQuantity = updateCartQuantity;
-
 
 // ====================================================================
 // 4. FUNÇÕES DE CONSULTA (QUERIES) - CARREGAMENTO DO CARDÁPIO
